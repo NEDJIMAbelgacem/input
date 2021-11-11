@@ -7,14 +7,13 @@ macx:!android {
       error("Missing INPUT_SDK_PATH")
     }
     
-    INPUT_SDK_ARCH_PATH = $${INPUT_SDK_PATH}/mac
-    INPUT_SDK_LIB_PATH = $${INPUT_SDK_ARCH_PATH}/lib
-    INPUT_SDK_INCLUDE_PATH = $${INPUT_SDK_ARCH_PATH}/include
+    INPUT_SDK_LIB_PATH = $${INPUT_SDK_PATH}/lib
+    INPUT_SDK_INCLUDE_PATH = $${INPUT_SDK_PATH}/include
     
     # QGIS
-    QGIS_PREFIX_PATH = $${INPUT_SDK_ARCH_PATH}/QGIS.app/Contents/MacOS
-    QGIS_FRAMEWORK_DIR = $${INPUT_SDK_ARCH_PATH}/QGIS.app/Contents/Frameworks
-    QGIS_PLUGINS_PATH=$${INPUT_SDK_ARCH_PATH}/QGIS.app/Contents/PlugIns/qgis
+    QGIS_PREFIX_PATH = $${INPUT_SDK_PATH}/QGIS.app/Contents/MacOS
+    QGIS_FRAMEWORK_DIR = $${INPUT_SDK_PATH}/QGIS.app/Contents/Frameworks
+    QGIS_PLUGINS_PATH=$${INPUT_SDK_PATH}/QGIS.app/Contents/PlugIns/qgis
     
     exists($${QGIS_FRAMEWORK_DIR}/qgis_core.framework/qgis_core) {
       message("Building from QGIS: $${QGIS_FRAMEWORK_DIR}/qgis_core.framework/qgis_core")
