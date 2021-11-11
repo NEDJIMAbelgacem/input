@@ -68,7 +68,7 @@ jobs:
         uses: pat-s/always-upload-cache@v2.1.5
         with:
           path: ${{ github.workspace }}/input-sdk
-          key: ${{ runner.os }}-input-sdk-v1-${{ env.INPUT_SDK_VERSION }}
+          key: ${{ runner.os }}-input-sdk-v2-${{ env.INPUT_SDK_VERSION }}
 
       - name: Install Input-SDK
         if: steps.cache-input-sdk.outputs.cache-hit != 'true'
@@ -76,7 +76,9 @@ jobs:
           wget -O \
             input-sdk.tar.gz \
             https://github.com/lutraconsulting/input-sdk/releases/download/${{ env.INPUT_SDK_VERSION }}/input-sdk-qt-${{ env.QT_VERSION }}-${{ env.INPUT_SDK_VERSION }}.tar.gz
-          tar -xvzf input-sdk.tar.gz -d ${{ github.workspace }}/input-sdk
+          mkdir -p ${{ github.workspace }}/input-sdk
+          cd ${{ github.workspace }}/input-sdk
+          tar -xvzf input-sdk.tar.gz
           ls ${{ github.workspace }}/input-sdk
           
       # Build Input App
@@ -103,7 +105,7 @@ jobs:
             CONFIG+=debug \
             CONFIG+=qtquickcompiler
 
-          make -j $(sysctl -n hw.ncpu)
+          make
           install_name_tool -add_rpath /opt/QGIS/qgis-deps-${QGIS_DEPS_VERSION}/stage/lib/ Input.app/Contents/MacOS/Input
           install_name_tool -add_rpath /opt/INPUT/input-sdk-mac-${SDK_VERSION}/stage/mac/lib Input.app/Contents/MacOS/Input
 
