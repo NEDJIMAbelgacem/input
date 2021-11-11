@@ -23,7 +23,8 @@ macx:!android {
 
     INCLUDEPATH += \
         $${QGIS_FRAMEWORK_DIR}/qgis_native.framework/Headers \
-        $${QGIS_FRAMEWORK_DIR}/qgis_core.framework/Headers
+        $${QGIS_FRAMEWORK_DIR}/qgis_core.framework/Headers \
+        $${INPUT_SDK_INCLUDE_PATH}
 
     LIBS += -F$${QGIS_FRAMEWORK_DIR}
     LIBS += -framework qgis_core \
