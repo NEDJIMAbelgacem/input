@@ -1,5 +1,18 @@
 name: iOS Build
-on: [push]
+on:
+  push:
+    paths:
+    - 'app/**'
+    - 'core/**'
+    - 'images/**'
+    - 'qgsquick/**'
+    - 'scripts/**'
+    - '.github/workflows/ios.yml'
+
+  release:
+    types:
+      - published
+      
 env:
   QT_DROPBOX_HASH: whdez6vfckulgxu
   QT_VERSION: 5.14.2

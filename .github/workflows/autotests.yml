@@ -68,17 +68,17 @@ jobs:
         uses: pat-s/always-upload-cache@v2.1.5
         with:
           path: ${{ github.workspace }}/input-sdk
-          key: ${{ runner.os }}-input-sdk-v2-${{ env.INPUT_SDK_VERSION }}
+          key: ${{ runner.os }}-input-sdk-v3-${{ env.INPUT_SDK_VERSION }}
 
       - name: Install Input-SDK
         if: steps.cache-input-sdk.outputs.cache-hit != 'true'
         run: |
           wget -O \
-            input-sdk.tar.gz \
+            ${{ github.workspace }}/input-sdk.tar.gz \
             https://github.com/lutraconsulting/input-sdk/releases/download/${{ env.INPUT_SDK_VERSION }}/input-sdk-qt-${{ env.QT_VERSION }}-${{ env.INPUT_SDK_VERSION }}.tar.gz
           mkdir -p ${{ github.workspace }}/input-sdk
           cd ${{ github.workspace }}/input-sdk
-          tar -xvzf input-sdk.tar.gz
+          tar -xvzf ${{ github.workspace }}/input-sdk.tar.gz
           ls ${{ github.workspace }}/input-sdk
           
       # Build Input App
