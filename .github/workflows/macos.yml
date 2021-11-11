@@ -1,4 +1,4 @@
-name: Auto Tests
+name: macOS Build (Auto Tests)
 on:
   push:
     paths:
@@ -19,11 +19,11 @@ env:
   TEST_API_PASSWORD: ${{ secrets.MERGINTEST_API_PASSWORD }}
   QT_VERSION: 5.14.2
   QMAKE_MACOSX_DEPLOYMENT_TARGET: 10.13.0
-  INPUT_SDK_VERSION: mac-20211110-23
+  INPUT_SDK_VERSION: mac-20211111-25
   CCACHE_DIR: /Users/runner/work/ccache
 
 jobs:
-  tests:
+  macos_build:
     if: ( github.repository == 'lutraconsulting/input' ) && (!contains(github.event.head_commit.message, 'Translate '))
     runs-on: macos-10.15
     steps:

@@ -24,7 +24,6 @@ jobs:
       SDK_PLATFORM: android-29
       SDK_BUILD_TOOLS: 28.0.3
       INPUT_SDK_VERSION: macOS-android-20211110-20
-      CACHE_VERSION: 1
       CCACHE_DIR: /Users/runner/work/ccache
       DROPBOX_TOKEN: ${{ secrets.INPUTAPP_BOT_DROPBOX_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.INPUTAPP_BOT_GITHUB_TOKEN }}
@@ -33,18 +32,19 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # CCache
       - name: Prepare build cache for pull request
         uses: pat-s/always-upload-cache@v2.1.5
         if: github.event_name == 'pull_request'
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: build-mac-android-ccache-${{ github.actor }}-${{ github.head_ref }}-${{ github.sha }}
+          key: build-android-ccache-${{ github.actor }}-${{ github.head_ref }}-${{ github.sha }}
           # The head_ref or source branch of the pull request in a workflow run.
           # The base_ref or target branch of the pull request in a workflow run.
           restore-keys: |
-            build-mac-android--ccache-${{ github.actor }}-${{ github.head_ref }}-
-            build-mac-android--ccache-refs/heads/${{ github.base_ref }}-
-            build-mac-android--ccache-refs/heads/master-
+            build-android-ccache-${{ github.actor }}-${{ github.head_ref }}-
+            build-android-ccache-refs/heads/${{ github.base_ref }}-
+            build-android-ccache-refs/heads/master-
 
       - name: Prepare build cache for branch/tag
         # use a fork of actions/cache@v2 to upload cache even when the build or test failed
@@ -53,10 +53,16 @@ jobs:
         with:
           path: ${{ env.CCACHE_DIR }}
           # The branch or tag ref that triggered the workflow run. For branches this in the format refs/heads/<branch_name>, and for tags it is refs/tags/<tag_name>
-          key: build-mac-android--ccache-${{ github.ref }}-${{ github.sha }}
+          key: build-android-ccache-${{ github.ref }}-${{ github.sha }}
           restore-keys: |
-            build-mac-android--ccache-${{ github.ref }}-
-            build-mac-android--ccache-refs/heads/master-
+            build-android-ccache-${{ github.ref }}-
+            build-android-ccache-refs/heads/master-
+
+      - name: Install ccache
+        run: |
+          mkdir -p ${CCACHE_DIR}
+          ccache --set-config=max_size=2.0G
+          ccache -s
 
       - name: Install Build Dependencies
         run: |
@@ -165,6 +171,7 @@ jobs:
           echo -e "android {"  >> ./app/config.pri
           echo -e "  export INPUT_SDK_PATH=${{ github.workspace }}/input-sdk"  >> ./app/config.pri
           echo -e "  export QGIS_QUICK_DATA_PATH = INPUT"  >> ./app/config.pri
+          echo -e "  QMAKE_CXX = ccache \$\$QMAKE_CXX "  >> ./app/config.pri
           echo -e "}"  >> ./app/config.pri		  
           cat ./app/config.conf
 

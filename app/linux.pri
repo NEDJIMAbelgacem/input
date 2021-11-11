@@ -3,8 +3,12 @@
 
     DEFINES += DESKTOP_OS
 
+    isEmpty(INPUT_SDK_PATH) {
+      error("Missing INPUT_SDK_PATH")
+    }
+
     # QGIS
-    !isEmpty(QGIS_INSTALL_PATH) {
+    !isEmpty(INPUT_SDK_PATH) {
       # using installed QGIS
       QGIS_PREFIX_PATH = $${QGIS_INSTALL_PATH}
       QGIS_LIB_DIR = $${QGIS_INSTALL_PATH}/lib
@@ -52,25 +56,13 @@
     }
 
     INCLUDEPATH += $${QGIS_INCLUDE_DIR}
-    LIBS += -L$${QGIS_LIB_DIR}
-    LIBS += -lqgis_core
-
-    # Geodiff
-    INCLUDEPATH += $${GEODIFF_INCLUDE_DIR}
-    LIBS += -L$${GEODIFF_LIB_DIR}
-    LIBS += -lgeodiff
-
-    # Proj
-    INCLUDEPATH += $${PROJ_INCLUDE_DIR}
-    LIBS += -L$${PROJ_LIB_DIR}
-    LIBS += -lproj
-
-    # GDAL
     INCLUDEPATH += $${OGR_INCLUDE_DIR}
 
-    # ZXing
-    INCLUDEPATH += $${ZXING_INCLUDE_DIR}
-    LIBS += -L$${ZXING_LIB_DIR}
+    LIBS += -L$${QGIS_LIB_DIR}
+
+    LIBS += -lqgis_core
+    LIBS += -lgeodiff
+    LIBS += -lproj
     LIBS += -lZXing
 
     # TESTING stuff (only desktop)

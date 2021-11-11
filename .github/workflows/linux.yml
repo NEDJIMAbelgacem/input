@@ -1,0 +1,132 @@
+name: Auto Tests
+on:
+  push:
+    paths:
+    - 'app/**'
+    - 'core/**'
+    - 'images/**'
+    - 'qgsquick/**'
+    - 'scripts/**'
+    - '.github/workflows/linux.yml'
+
+  release:
+    types:
+      - published
+
+env:
+  CCACHE_DIR: /Users/runner/work/ccache
+  INPUT_SDK_VERSION: ubuntu-2004-20211110-20
+  CCACHE_DIR: /Users/runner/work/ccache
+  
+jobs:
+  linux_build:
+    if: ( github.repository == 'lutraconsulting/input' ) && (!contains(github.event.head_commit.message, 'Translate '))
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Input
+        uses: actions/checkout@v2
+        with:
+          path: input
+
+      - name: Install Build Dependencies
+        run: |
+            sudo apt-get install -y qtpositioning5-dev qml-module-qtmultimedia qml-module-qtpositioning \
+                                    qml-module-qtqml-models2 qml-module-qtgraphicaleffects qml-module-qtquick-dialogs \
+                                    qml-module-qtquick-controls2 qml-module-qtquick-window2 qml-module-qtquick-layouts \
+                                    qml-module-qtquick-shapes qml-module-qtquick-controls qtquickcontrols2-5-dev \
+                                    libqt5sensors5-dev qtmultimedia5-dev
+            sudo apt-get install -y qml-module-qt-labs-* openssl ccache
+            
+            sudo apt-get install -y bison ca-certificates ccache cmake cmake-curses-gui dh-python expect flex flip gdal-bin \
+                            git graphviz libexiv2-dev libexpat1-dev libfcgi-dev libgdal-dev libgeos-dev \
+                            libgsl-dev libpdal-dev libpq-dev libproj-dev libprotobuf-dev libqca-qt5-2-dev \
+                            libqca-qt5-2-plugins libqscintilla2-qt5-dev libqt5opengl5-dev libqt5serialport5-dev \
+                            libqt5sql5-sqlite libqt5svg5-dev libqt5webkit5-dev libqt5xmlpatterns5-dev libqwt-qt5-dev \
+                            libspatialindex-dev libspatialite-dev libsqlite3-dev libsqlite3-mod-spatialite libyaml-tiny-perl \
+                            libzip-dev libzstd-dev lighttpd locales ninja-build libpq-dev \
+                            pkg-config poppler-utils protobuf-compiler pyqt5-dev pyqt5-dev-tools pyqt5.qsci-dev python3-all-dev \
+                            qt3d-assimpsceneimport-plugin qt3d-defaultgeometryloader-plugin qt3d-gltfsceneio-plugin qt3d-scene2d-plugin \
+                            qt3d5-dev qt5-default qt5keychain-dev qtbase5-dev qtbase5-private-dev qtpositioning5-dev qttools5-dev \
+                            qttools5-dev-tools spawn-fcgi xauth xfonts-100dpi xfonts-75dpi xfonts-base xfonts-scalable xvfb
+
+      - name: Extract Mergin API_KEY
+        env:
+          MERGINSECRETS_DECRYPT_KEY: ${{ secrets.MERGINSECRETS_DECRYPT_KEY }}
+        run: |
+          cd input/core/
+          openssl \
+            aes-256-cbc -d \
+            -in merginsecrets.cpp.enc \
+            -out merginsecrets.cpp \
+            -k "$MERGINSECRETS_DECRYPT_KEY" \
+            -md md5
+
+      # CCache
+      - name: Prepare build cache for pull request
+        uses: pat-s/always-upload-cache@v2.1.5
+        if: github.event_name == 'pull_request'
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: build-linux-ccache-${{ github.actor }}-${{ github.head_ref }}-${{ github.sha }}
+          # The head_ref or source branch of the pull request in a workflow run.
+          # The base_ref or target branch of the pull request in a workflow run.
+          restore-keys: |
+            build-mac-ccache-${{ github.actor }}-${{ github.head_ref }}-
+            build-mac-ccache-refs/heads/${{ github.base_ref }}-
+            build-mac-ccache-refs/heads/master-
+
+      - name: Prepare build cache for branch/tag
+        # use a fork of actions/cache@v2 to upload cache even when the build or test failed
+        uses: pat-s/always-upload-cache@v2.1.5
+        if: github.event_name != 'pull_request'
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          # The branch or tag ref that triggered the workflow run. For branches this in the format refs/heads/<branch_name>, and for tags it is refs/tags/<tag_name>
+          key: build-linux-ccache-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            build-mac-ccache-${{ github.ref }}-
+            build-mac-ccache-refs/heads/master-
+
+      - name: Install ccache
+        run: |
+          mkdir -p ${CCACHE_DIR}
+          ccache --set-config=max_size=2.0G
+          ccache -s
+
+      # Input SDK
+      - name: Cache Input-SDK
+        id: cache-input-sdk
+        uses: pat-s/always-upload-cache@v2.1.5
+        with:
+          path: ${{ github.workspace }}/input-sdk
+          key: ${{ runner.os }}-input-sdk-v1-${{ env.INPUT_SDK_VERSION }}
+
+      - name: Install Input-SDK
+        if: steps.cache-input-sdk.outputs.cache-hit != 'true'
+        run: |
+          wget -O \
+            ${{ github.workspace }}/input-sdk.tar.gz \
+            https://github.com/lutraconsulting/input-sdk/releases/download/${{ env.INPUT_SDK_VERSION }}/input-sdk-${{ env.INPUT_SDK_VERSION }}.tar.gz
+          mkdir -p ${{ github.workspace }}/input-sdk
+          cd ${{ github.workspace }}/input-sdk
+          tar -xvzf ${{ github.workspace }}/input-sdk.tar.gz
+          
+      # Build Input App
+      - name: Export app/config.pri
+        run: |
+          touch ./input/app/config.pri
+          echo -e "unix:!macx:!android {"  >> ./input/app/config.pri
+          echo -e "  INPUT_SDK_PATH = ${{ github.workspace }}/input-sdk"  >> ./input/app/config.pri
+          echo -e "  QGIS_QUICK_DATA_PATH = ${{ github.workspace }}/input/app/android/assets/qgis-data"  >> ./input/app/config.pri
+          echo -e "  QMAKE_CXX = ccache \$\$QMAKE_CXX "  >> ./input/app/config.pri
+          echo -e "}"  >> ./input/app/config.pri		  
+          cat ./input/app/config.pri
+          
+      - name: build Input
+        run: |
+          mkdir -p build-Input
+          cd build-Input
+          qmake \
+            ../input/app/input.pro
+          make
+
