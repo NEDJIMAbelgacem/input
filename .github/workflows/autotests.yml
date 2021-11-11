@@ -84,7 +84,7 @@ jobs:
       - name: Export app/config.pri
         run: |
           touch ./input/app/config.pri
-          echo -e "android {"  >> ./input/app/config.pri
+          echo -e "macx:!android {"  >> ./input/app/config.pri
           echo -e "  INPUT_SDK_PATH = ${{ github.workspace }}/input-sdk"  >> ./input/app/config.pri
           echo -e "  QMAKE_MACOSX_DEPLOYMENT_TARGET = ${{ env.QMAKE_MACOSX_DEPLOYMENT_TARGET }}"  >> ./input/app/config.pri
           echo -e "  QGIS_QUICK_DATA_PATH = ${{ github.workspace }}/input/app/android/assets/qgis-data"  >> ./input/app/config.pri
