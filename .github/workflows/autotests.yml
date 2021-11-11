@@ -91,12 +91,10 @@ jobs:
           echo -e "  QMAKE_CXXFLAGS += --coverage"  >> ./input/app/config.pri
           echo -e "  QMAKE_LFLAGS += --coverage "  >> ./input/app/config.pri
           echo -e "}"  >> ./input/app/config.pri		  
-          cat ./input/app/config.conf
+          cat ./input/app/config.pri
           
       - name: build Input
         run: |
-          cp ./input/scripts/ci/config.pri ./input/app/config.pri
-
           mkdir -p build-Input
           cd build-Input
           ${{ github.workspace }}/Qt/${QT_VERSION}/clang_64/bin/qmake \
