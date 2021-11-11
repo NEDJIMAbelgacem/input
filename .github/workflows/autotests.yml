@@ -1,13 +1,25 @@
 name: Auto Tests
-on: [push]
+on:
+  push:
+    paths:
+    - 'app/**'
+    - 'core/**'
+    - 'images/**'
+    - 'qgsquick/**'
+    - 'scripts/**'
+    - '.github/workflows/autotests.yml'
+
+  release:
+    types:
+      - published
+
 env:
   TEST_MERGIN_URL: https://test.dev.cloudmergin.com/
   TEST_API_USERNAME: test_inputapp
   TEST_API_PASSWORD: ${{ secrets.MERGINTEST_API_PASSWORD }}
   QT_VERSION: 5.14.2
-  QGIS_DEPS_VERSION: 0.7.0
-  SDK_HASH: 4pyvtxsrcaebkfk
-  SDK_VERSION: 9
+  QMAKE_MACOSX_DEPLOYMENT_TARGET: 10.13.0
+  INPUT_SDK_VERSION: mac-20211110-23
 
 jobs:
   tests:
@@ -35,39 +47,51 @@ jobs:
               -k "$MERGINSECRETS_DECRYPT_KEY" \
               -md md5
 
-      - name: download input-sdk
-        run: |
-          ROOT=`pwd`
-          wget https://www.dropbox.com/s/${SDK_HASH}/input-sdk-qt-${QT_VERSION}-deps-${QGIS_DEPS_VERSION}-mac-${SDK_VERSION}.tar.gz?dl=0
-          mv $ROOT/input-sdk-qt-${QT_VERSION}-deps-${QGIS_DEPS_VERSION}-mac-${SDK_VERSION}.tar.gz?dl=0 $ROOT/input-sdk.tar.gz
-          sudo mkdir -p /opt/INPUT
-          sudo chown -R $USER /opt/INPUT
-          mkdir -p /opt/INPUT/input-sdk-mac-$SDK_VERSION/stage/mac
-          cd /opt/INPUT/input-sdk-mac-$SDK_VERSION/stage/mac
-          tar -xvzf $ROOT/input-sdk.tar.gz
-          mkdir -p /opt/INPUT/input-sdk-mac-${SDK_VERSION}/build/qgis/build-mac/output
-          ln -s /opt/INPUT/input-sdk-mac-${SDK_VERSION}/stage/mac/QGIS.app/Contents/Frameworks/ /opt/INPUT/input-sdk-mac-${SDK_VERSION}/build/qgis/build-mac/output/lib
+      # Qt
+      - name: Cache Qt
+        id: cache-qt
+        uses: pat-s/always-upload-cache@v2.1.5
+        with:
+          path: ${{ github.workspace }}/Qt
+          key: ${{ runner.os }}-QtCache-v1-${{ env.QT_VERSION }}
 
-      - name: download qt
-        run: |
-          ROOT=`pwd`
-          wget https://qgis.org/downloads/macos/deps/qt-${QT_VERSION}.tar.gz
-          sudo mkdir -p /opt/Qt
-          sudo chown -R $USER /opt/Qt
-          mkdir -p /opt/Qt/${QT_VERSION}/clang_64
-          cd /opt/Qt/${QT_VERSION}/clang_64
-          tar -xvzf $ROOT/qt-${QT_VERSION}.tar.gz
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: ${{ env.QT_VERSION }}
+          dir: ${{ github.workspace }}
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+      
+      # Input SDK
+      - name: Cache Input-SDK
+        id: cache-input-sdk
+        uses: pat-s/always-upload-cache@v2.1.5
+        with:
+          path: ${{ github.workspace }}/input-sdk
+          key: ${{ runner.os }}-input-sdk-v1-${{ env.INPUT_SDK_VERSION }}
 
-      - name: download qgis-deps
+      - name: Install Input-SDK
+        if: steps.cache-input-sdk.outputs.cache-hit != 'true'
         run: |
-          ROOT=`pwd`
-          wget https://qgis.org/downloads/macos/deps/qgis-deps-${QGIS_DEPS_VERSION}.tar.gz
-          sudo mkdir -p /opt/QGIS
-          sudo chown -R $USER /opt/QGIS
-          mkdir -p /opt/QGIS/qgis-deps-${QGIS_DEPS_VERSION}/stage/
-          cd /opt/QGIS/qgis-deps-${QGIS_DEPS_VERSION}/stage/
-          tar -xvzf $ROOT/qgis-deps-${QGIS_DEPS_VERSION}.tar.gz
-
+          wget -O \
+            input-sdk.tar.gz \
+            https://github.com/lutraconsulting/input-sdk/releases/download/${{ env.INPUT_SDK_VERSION }}/input-sdk-qt-${{ env.QT_VERSION }}-${{ env.INPUT_SDK_VERSION }}.tar.gz
+          tar -xvzf input-sdk.tar.gz -d ${{ github.workspace }}/input-sdk
+          ls ${{ github.workspace }}/input-sdk
+          
+      # Build Input App
+      - name: Export app/config.pri
+        run: |
+          touch ./app/config.pri
+          echo -e "android {"  >> ./app/config.pri
+          echo -e "  INPUT_SDK_PATH = ${{ github.workspace }}/input-sdk"  >> ./app/config.pri
+          echo -e "  QMAKE_MACOSX_DEPLOYMENT_TARGET = ${{ env.QMAKE_MACOSX_DEPLOYMENT_TARGET }}"  >> ./app/config.pri
+          echo -e "  QGIS_QUICK_DATA_PATH = ${{ github.workspace }}/input/app/android/assets/qgis-data"  >> ./app/config.pri
+          echo -e "  QMAKE_CXXFLAGS += --coverage"  >> ./app/config.pri
+          echo -e "  QMAKE_LFLAGS += --coverage "  >> ./app/config.pri
+          echo -e "}"  >> ./app/config.pri		  
+          cat ./app/config.conf
+          
       - name: build Input
         run: |
           cp input/scripts/ci/config.pri input/app/config.pri
