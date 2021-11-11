@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout Input
         uses: actions/checkout@v2
+        with:
+          path: input
 
       - name: install brew deps
         run: |
@@ -81,30 +83,28 @@ jobs:
       # Build Input App
       - name: Export app/config.pri
         run: |
-          touch ./app/config.pri
-          echo -e "android {"  >> ./app/config.pri
-          echo -e "  INPUT_SDK_PATH = ${{ github.workspace }}/input-sdk"  >> ./app/config.pri
-          echo -e "  QMAKE_MACOSX_DEPLOYMENT_TARGET = ${{ env.QMAKE_MACOSX_DEPLOYMENT_TARGET }}"  >> ./app/config.pri
-          echo -e "  QGIS_QUICK_DATA_PATH = ${{ github.workspace }}/input/app/android/assets/qgis-data"  >> ./app/config.pri
-          echo -e "  QMAKE_CXXFLAGS += --coverage"  >> ./app/config.pri
-          echo -e "  QMAKE_LFLAGS += --coverage "  >> ./app/config.pri
-          echo -e "}"  >> ./app/config.pri		  
-          cat ./app/config.conf
+          touch ./input/app/config.pri
+          echo -e "android {"  >> ./input/app/config.pri
+          echo -e "  INPUT_SDK_PATH = ${{ github.workspace }}/input-sdk"  >> ./input/app/config.pri
+          echo -e "  QMAKE_MACOSX_DEPLOYMENT_TARGET = ${{ env.QMAKE_MACOSX_DEPLOYMENT_TARGET }}"  >> ./input/app/config.pri
+          echo -e "  QGIS_QUICK_DATA_PATH = ${{ github.workspace }}/input/app/android/assets/qgis-data"  >> ./input/app/config.pri
+          echo -e "  QMAKE_CXXFLAGS += --coverage"  >> ./input/app/config.pri
+          echo -e "  QMAKE_LFLAGS += --coverage "  >> ./input/app/config.pri
+          echo -e "}"  >> ./input/app/config.pri		  
+          cat ./input/app/config.conf
           
       - name: build Input
         run: |
-          cp input/scripts/ci/config.pri input/app/config.pri
+          cp ./input/scripts/ci/config.pri ./input/app/config.pri
 
           mkdir -p build-Input
           cd build-Input
-          /opt/Qt/${QT_VERSION}/clang_64/bin/qmake \
+          ${{ github.workspace }}/Qt/${QT_VERSION}/clang_64/bin/qmake \
             ../input/app/input.pro \
             CONFIG+=debug \
             CONFIG+=qtquickcompiler
 
           make
-          install_name_tool -add_rpath /opt/QGIS/qgis-deps-${QGIS_DEPS_VERSION}/stage/lib/ Input.app/Contents/MacOS/Input
-          install_name_tool -add_rpath /opt/INPUT/input-sdk-mac-${SDK_VERSION}/stage/mac/lib Input.app/Contents/MacOS/Input
 
       - name: run tests
         run: |
