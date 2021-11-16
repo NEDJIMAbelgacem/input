@@ -28,7 +28,7 @@ jobs:
       DROPBOX_TOKEN: ${{ secrets.INPUTAPP_BOT_DROPBOX_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.INPUTAPP_BOT_GITHUB_TOKEN }}
       INPUTKEYSTORE_STOREPASS: ${{ secrets.INPUTKEYSTORE_STOREPASS }}
-          
+
     steps:
       - uses: actions/checkout@v2
 

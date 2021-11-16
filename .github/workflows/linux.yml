@@ -1,4 +1,4 @@
-name: Auto Tests
+name: linux Build
 on:
   push:
     paths:
@@ -39,11 +39,11 @@ jobs:
             
             sudo apt-get install -y bison ca-certificates ccache cmake cmake-curses-gui dh-python expect flex flip gdal-bin \
                             git graphviz libexiv2-dev libexpat1-dev libfcgi-dev libgdal-dev libgeos-dev \
-                            libgsl-dev libpdal-dev libpq-dev libproj-dev libprotobuf-dev libqca-qt5-2-dev \
+                            libgsl-dev libpq-dev libproj-dev libprotobuf-dev libqca-qt5-2-dev \
                             libqca-qt5-2-plugins libqscintilla2-qt5-dev libqt5opengl5-dev libqt5serialport5-dev \
                             libqt5sql5-sqlite libqt5svg5-dev libqt5webkit5-dev libqt5xmlpatterns5-dev libqwt-qt5-dev \
                             libspatialindex-dev libspatialite-dev libsqlite3-dev libsqlite3-mod-spatialite libyaml-tiny-perl \
-                            libzip-dev libzstd-dev lighttpd locales ninja-build libpq-dev \
+                            libzip-dev libzstd-dev lighttpd locales ninja-build \
                             pkg-config poppler-utils protobuf-compiler pyqt5-dev pyqt5-dev-tools pyqt5.qsci-dev python3-all-dev \
                             qt3d-assimpsceneimport-plugin qt3d-defaultgeometryloader-plugin qt3d-gltfsceneio-plugin qt3d-scene2d-plugin \
                             qt3d5-dev qt5-default qt5keychain-dev qtbase5-dev qtbase5-private-dev qtpositioning5-dev qttools5-dev \
@@ -92,6 +92,8 @@ jobs:
           mkdir -p ${CCACHE_DIR}
           ccache --set-config=max_size=2.0G
           ccache -s
+          sudo ln -s /usr/bin/ccache gcc
+          sudo ln -s /usr/bin/ccache g++
 
       # Input SDK
       - name: Cache Input-SDK
@@ -118,7 +120,6 @@ jobs:
           echo -e "unix:!macx:!android {"  >> ./input/app/config.pri
           echo -e "  INPUT_SDK_PATH = ${{ github.workspace }}/input-sdk"  >> ./input/app/config.pri
           echo -e "  QGIS_QUICK_DATA_PATH = ${{ github.workspace }}/input/app/android/assets/qgis-data"  >> ./input/app/config.pri
-          echo -e "  QMAKE_CXX = ccache \$\$QMAKE_CXX "  >> ./input/app/config.pri
           echo -e "}"  >> ./input/app/config.pri		  
           cat ./input/app/config.pri
           

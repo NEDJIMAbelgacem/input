@@ -15,7 +15,7 @@ on:
       
 env:
   QT_VERSION: 5.14.2
-  INPUT_SDK_VERSION: macOS-android-20211110-20
+  INPUT_SDK_VERSION: ios-20211111-10
   IOS_PROVISIONING_PROFILE_UUID: 59aaa8d7-516a-4592-8c58-d7d1c1f81610
   KEYCHAIN: ${{ 'inputapp.keychain' }}
   XC_VERSION: ${{ '12.0.1' }}
@@ -58,19 +58,21 @@ jobs:
             build-ios-ccache-${{ github.ref }}-
             build-ios-ccache-refs/heads/master-
 
+      - name: Install brew deps
+        run: |
+          brew install gnupg
+          brew install openssl@1.1
+          brew install python3
+          brew install ccache
+          pip3 install dropbox
+          
+          
       - name: Install ccache
         run: |
           mkdir -p ${CCACHE_DIR}
           ccache --set-config=max_size=2.0G
           ccache -s
           
-      - name: Install brew deps
-        run: |
-          brew install gnupg
-          brew install openssl@1.1
-          brew install python3
-          pip3 install dropbox
-
       - name: Extract Mergin API_KEY
         env:
           MERGINSECRETS_DECRYPT_KEY: ${{ secrets.MERGINSECRETS_DECRYPT_KEY }}
