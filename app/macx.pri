@@ -31,7 +31,7 @@ macx:!android {
             -framework qgis_native
 
 	# other libs
-    LIBS += -L$${INPUT_SDK_LIB_PATH}/lib -L$${QGIS_PLUGINS_PATH}
+    LIBS += -L$${INPUT_SDK_LIB_PATH} -L$${QGIS_PLUGINS_PATH}
     LIBS += -lgeodiff
     LIBS += -lproj
     LIBS += -lZXing
@@ -49,6 +49,7 @@ macx:!android {
     LIBS += -lprovider_wcs_a
     LIBS += -lprovider_wfs_a
     LIBS += -lprovider_wms_a
+    LIBS += -lprovider_postgres_a
     LIBS += -lqt5keychain -lqca-qt5
     LIBS += -lgdal -lpq -lspatialite
     LIBS += -lcharset -lxml2
@@ -56,6 +57,7 @@ macx:!android {
     LIBS += -lspatialindex -lgeos -lgeos_c
     LIBS += -lprotobuf-lite -lexpat -lfreexl -lexiv2 -lexiv2-xmp
     LIBS += -lsqlite3 -liconv -lz -lzip
+    LIBS += -lwebp
 
     # PURCHASING stuff (only testing)
     DEFINES += "PURCHASING"
@@ -78,5 +80,5 @@ macx:!android {
     QT += multimedia
     DEFINES += "HAVE_WIDGETS"
 
-    QMAKE_CXXFLAGS += -std=c++11
+    QMAKE_CXXFLAGS += -std=c++11 -fvisibility-inlines-hidden -fvisibility=hidden
 }
